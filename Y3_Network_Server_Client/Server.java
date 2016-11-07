@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.net.InetSocketAddress;
 
 import java.util.zip.ZipOutputStream;
@@ -22,7 +23,7 @@ import com.sun.net.httpserver.BasicAuthenticator;
 /** 
   * the server class for sending the file to the clients
  */
-public class Server1 {
+public class Server {
 
 	public static void main(String[] args) throws Exception 
 	{
@@ -35,8 +36,15 @@ public class Server1 {
 		// create a list of file from the folder above
 		File[] listOfFiles = folder.listFiles();
 		
-		// call functions to handle different file requests
-		createContext(server, listOfFiles);
+		if(listOfFiles != null && listOfFiles.length != 0)
+		{
+			// call functions to handle different file requests
+			createContext(server, listOfFiles);
+		}
+		else
+		{
+			server.createContext("/Info", new InfoHandler(null));
+		}
 		
 		// create a multi threading executors
 		server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(5)); 
@@ -56,6 +64,11 @@ public class Server1 {
 	 */
 	private static void createContext(HttpServer server, File[] listOfFiles)
 	{
+		// create an info page
+		String[] nameOfFiles = getNameOfFiles(listOfFiles);
+		server.createContext("/Info", new InfoHandler(nameOfFiles));
+		System.out.println("info page created");
+		
 		// create the first handler for the first file with authentication
 		HttpContext context = server.createContext("/" + listOfFiles[0].getName(), new Handler(listOfFiles[0]));
 		context.setAuthenticator(new BasicAuthenticator("admin") 
@@ -112,7 +125,7 @@ public class Server1 {
 			// check if the file is a directory
 			if (file.isDirectory())
 			{	
-				// add the file type header
+				// add the content type header
 				h.add("Content-Type", "Zipped Folder");
 				
 				// if the file is a folder, get all the files inside the folder
@@ -133,7 +146,7 @@ public class Server1 {
 			else if((file.getName()).contains("file3.txt"))
 			{
 				
-				// add the file type header						
+				// add the content type header						
 				h.add("Content-Type", fileType);
 				
 				// encrypt the file
@@ -164,6 +177,61 @@ public class Server1 {
 		}   
 	}
 	
+	/** 
+	 * Handler class for handle request for info
+	 */
+	static class InfoHandler implements HttpHandler
+	{
+		/**
+		 * the list of the name of files attached to the handler 
+		 */
+		private String[] nameOfFiles;
+
+		/** 
+		 * constructor
+		 * @param file the attached file
+		 */
+		public InfoHandler(String[] nameOfFiles)
+		{
+			this.nameOfFiles = nameOfFiles;
+		} 
+	 
+		/**
+		 * the actual handling action
+		 */
+		public void handle(HttpExchange t) throws IOException 
+		{
+			// add the required response header
+			Headers h = t.getResponseHeaders();
+
+			// add the content type header
+			h.add("Content-Type", "Info");
+			
+			String info = "The list of file(s) available is: ";
+
+			if(nameOfFiles != null)
+			{
+				info = info + nameOfFiles[0];
+				for (int i = 0; i < (nameOfFiles.length - 1); i++)
+				{
+					info = info + ", " + nameOfFiles[i+1];
+				}
+			}
+
+			// send the info to the client in the form of a http response
+			t.sendResponseHeaders(200, info.length());
+			OutputStream os = t.getResponseBody();
+			os.write(info.getBytes());
+		
+			// close the stream after use
+			os.close();
+
+			// notify the transmission
+			System.out.println("Info sent to the client");
+		}
+	}
+
+
 	/**
 	 * the function for sending the file
 	 * @param t 	the http exchange
@@ -240,5 +308,30 @@ public class Server1 {
 		}
 		
 		return ("files/" + zipName);
+	}
+
+	/**
+	 * method for getting the name of the files from an array of files
+	 * 
+	 * @param listOfFiles 	 the array of the files
+	 *
+	 * @return nameOfFiles 	 the array of the names of the files
+	 */
+	private static String[] getNameOfFiles(File[] listOfFiles)
+	{
+		String[] nameOfFiles = new String[listOfFiles.length];
+		for(int i = 0; i < listOfFiles.length; i++)
+		{
+			if(listOfFiles[i].isDirectory())
+			{
+				nameOfFiles[i] = "folder " + listOfFiles[i].getName();
+			}
+			else
+			{
+				nameOfFiles[i] = listOfFiles[i].getName();
+			}
+		}
+
+		return nameOfFiles;
 	}
 }

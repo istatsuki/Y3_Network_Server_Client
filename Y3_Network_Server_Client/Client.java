@@ -60,14 +60,29 @@ public class Client
 			conn.connect();
 
 			// get the file type
-			String fileType = conn.getHeaderField("Content-Type");
+			String contentType = conn.getHeaderField("Content-Type");
 			
-			if(fileType != null)
+			if(contentType.contains("Info"))
+			{
+				// initiate reader for taking in the info response
+				BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			
+				// read the response
+				String in;
+				while((in = br.readLine()) != null)
+				{
+					System.out.println(in);
+				}
+			
+				// close the stream
+				br.close();
+			}
+			else if(contentType != null)
 			{
 				String fileName = "";
 				
 				// file name options
-				if(fileType.contains("Zipped Folder"))
+				if(contentType.contains("Zipped Folder"))
 				{
 					fileName = urlstr.substring(urlstr.lastIndexOf("/") + 1) + ".zip";
 				}
@@ -92,7 +107,7 @@ public class Client
 				os.close();
 				dis.close();
 				
-				System.out.println(fileType + " " + fileName + " received from the server");
+				System.out.println(contentType + " " + fileName + " received from the server");
 			}
 			else
 			{
