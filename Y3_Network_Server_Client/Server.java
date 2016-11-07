@@ -153,16 +153,26 @@ public class Server {
 			{	
 				// add the file type header						
 				h.add("Content-Type", fileType);
+				
+				File[] files = new File[1];
+				
+				files[0] = file;
+
+				// zip the  file
+				File file2 = new File(zip(files, file.getName() + ".zip"));
 
 				// encrypt the file
 				Encryption encTool = new Encryption();
-				File file2 = new File(encTool.encryptAESCTR(file.getAbsolutePath()));
+				File file3 = new File(encTool.encryptAESCTR(file2.getAbsolutePath()));
 				
-				// send the file
+				// send the zip file
 				sendFile(t, file2);
+				
+				// delete the zip file after transmission
+				file2.delete();
 
 				// delete the encrypted file after transmission
-				file2.delete();
+				file3.delete();
 				
 				// notify about the transmission
 				System.out.println(fileType + " " + file.getName() + " sent to client");

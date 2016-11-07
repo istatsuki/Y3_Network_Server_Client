@@ -1,0 +1,63 @@
+# define a variable for compiler flags (JFLAGS)
+# define a variable for the compiler (JC)  
+# define a variable for the Java Virtual Machine (JVM)
+# define a variable for a parameter. When you run make, you could use:
+# make run FILE="Algo.csv" para sobre escribir el valor de FILE. 
+
+JFLAGS = -g
+JC = javac
+JVM= java 
+#
+# Here is our target entry for creating .class files from .java files 
+# This is a target entry that uses the suffix rule syntax:
+#	DSTS:
+#		rule
+# DSTS (Dependency Suffix Target Suffix)
+# 'TS' is the suffix of the target file, 'DS' is the suffix of the dependency 
+#  file, and 'rule'  is the rule for building a target	
+# '$*' is a built-in macro that gets the basename of the current target 
+# Remember that there must be a < tab > before the command line ('rule') 
+#
+
+.java.class:
+	$(JC) $(JFLAGS) $*.java
+
+
+#
+# CLASSES is a macro consisting of 4 words (one for each java source file)
+#
+
+CLASSES = \
+	Server.java \
+	Encryption.java 
+        
+#
+# MAIN is a variable with the name of the file containing the main method
+#
+
+MAIN = Server
+
+#
+# the default make target entry
+# for this example it is the target classes
+
+default: classes
+
+
+# Next line is a target dependency line
+# This target entry uses Suffix Replacement within a macro: 
+# $(macroname:string1=string2)
+# In the words in the macro named 'macroname' replace 'string1' with 'string2'
+# Below we are replacing the suffix .java of all words in the macro CLASSES 
+# with the .class suffix
+#
+
+classes: $(CLASSES:.java=.class)
+
+
+# Next two lines contain a target for running the program
+# Remember the tab in the second line.
+# $(JMV) y $(MAIN) are replaced by their values
+
+run: $(MAIN).class
+	$(JVM) $(MAIN)
