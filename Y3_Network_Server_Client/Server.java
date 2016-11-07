@@ -69,9 +69,14 @@ public class Server {
 		server.createContext("/Info", new InfoHandler(nameOfFiles));
 		System.out.println("info page created");
 		
-		// create the first handler for the first file with authentication
-		HttpContext context = server.createContext("/" + listOfFiles[0].getName(), new Handler(listOfFiles[0]));
-		context.setAuthenticator(new BasicAuthenticator("admin") 
+		// iteration through the list of available files from the second file
+		for(int i = 0; i < listOfFiles.length; i++)
+		{	
+			// create the individual request handlers
+			HttpContext context = server.createContext("/" + listOfFiles[i].getName(), new Handler(listOfFiles[i]));
+
+			// set authentication
+			context.setAuthenticator(new BasicAuthenticator("admin") 
 			{
 				@Override
 				public boolean checkCredentials(String user, String pwd) 
@@ -79,12 +84,6 @@ public class Server {
 					return user.equals("admin") && pwd.equals("admin");
 				}
 			});
-		
-		// iteration through the list of available files from the second file
-		for(int i = 1; i < listOfFiles.length; i++)
-		{	
-			// create the individual request handlers
-			server.createContext("/" + listOfFiles[i].getName(), new Handler(listOfFiles[i]));
 			
 			// print out the list of available files
 			System.out.println(listOfFiles[i].getName());
@@ -133,43 +132,37 @@ public class Server {
 				
 				// zip the folder into a zip file
 				File file2 = new File(zip(files, file.getName() + ".zip"));
+
+				// encrypt the file
+				Encryption encTool = new Encryption();
+				File file3 = new File(encTool.encryptAESCTR(file2.getAbsolutePath()));
 				
 				// send the zip file
 				sendFile(t, file2);
 				
 				// delete the zip file after transmission
 				file2.delete();
+
+				// delete the encrypted file after transmission
+				file3.delete();
 				
 				// notify about the transmission
 				System.out.println("Zipped Folder" + " " + file.getName() + " sent to client");
 			}
-			else if((file.getName()).contains("file3.txt"))
-			{
-				
-				// add the content type header						
+			else
+			{	
+				// add the file type header						
 				h.add("Content-Type", fileType);
-				
+
 				// encrypt the file
 				Encryption encTool = new Encryption();
 				File file2 = new File(encTool.encryptAESCTR(file.getAbsolutePath()));
 				
 				// send the file
 				sendFile(t, file2);
-				
-				// delete the encryted file after transmission
+
+				// delete the encrypted file after transmission
 				file2.delete();
-				
-				// notify about the transmission
-				System.out.println("Encrypted" + fileType + " " + file.getName() + " sent to client");
-				
-			}
-			else
-			{	
-				// add the file type header						
-				h.add("Content-Type", fileType);
-				
-				// send the file
-				sendFile(t, file);
 				
 				// notify about the transmission
 				System.out.println(fileType + " " + file.getName() + " sent to client");
